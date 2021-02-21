@@ -136,6 +136,7 @@ expr:
 | STRING_LITERAL {}
 | BOOLEAN_LITERAL {}
 | IDENTIFIER {}
+| NULL {}
 | func_call {}
 | object_instantiation {}
 | array_access {}
