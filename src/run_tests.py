@@ -77,11 +77,15 @@ class TestLexerAndParser(unittest.TestCase):
     self.assertProgramPasses(program)
 
   def test_simple_assignment_passes_2(self):
-    program = b"double yEs = -2.5 \n"
+    program = b"float yEs = -2.5 \n"
     self.assertProgramPasses(program)
 
   def test_simple_assignment_passes_3(self):
     program = b"string foo = myfunction(1+1+2+3+5)\n"
+    self.assertProgramPasses(program)
+
+  def test_assignment_without_type_passes(self):
+    program = b"x = 5\n"
     self.assertProgramPasses(program)
 
   def test_object_assignment_passes(self):
@@ -112,8 +116,12 @@ class TestLexerAndParser(unittest.TestCase):
     program = b"int x = NULL\n"
     self.assertProgramPasses(program)
 
-  def test_single_comments(self):
+  def test_single_comments_1(self):
     program = b"#comments\n"
+    self.assertProgramPasses(program)
+
+  def test_single_comments_2(self):
+    program = b"int x = 2 \n MyObject foo = 2+2 # comment\n\n\n int y = 2\n"
     self.assertProgramPasses(program)
 
   def test_multi_comments(self):
@@ -175,6 +183,18 @@ class TestLexerAndParser(unittest.TestCase):
     program = b"myobject.myfunction(a, b, c)\n\n"
     self.assertProgramPasses(program)
 
+  def test_long_initialization_passes(self):
+    program = b"long lo = 500000000000L\n"
+    self.assertProgramPasses(program)
+
+  def test_valid_minus_eq(self):
+    program = b"fOo -= 500L\n"
+    self.assertProgramPasses(program)
+
+  def test_valid_divide_eq_with_object(self):
+    program = b"myobject.heY /= 20\n"
+    self.assertProgramPasses(program)
+
   def test_nonsense_fails(self):
     program = b"%-$_? !?\n"
     self.assertProgramFails(program)
@@ -184,10 +204,6 @@ class TestLexerAndParser(unittest.TestCase):
     self.assertProgramFails(program)
 
   def test_invalid_assignment_fails_1(self):
-    program = b"x = 5 \n"
-    self.assertProgramFails(program)
-
-  def test_invalid_assignment_fails_2(self):
     program = b"int x = \n"
     self.assertProgramFails(program)
 
@@ -233,6 +249,26 @@ class TestLexerAndParser(unittest.TestCase):
 
   def test_invalid_object_usage(self):
     program = b"myobject.\n"
+    self.assertProgramFails(program)
+
+  def test_invalid_primitive_type_fails(self):
+    program = b"short x = 500\n"
+    self.assertProgramFails(program)
+
+  def test_invalid_long_assignment_fails(self):
+    program = b"long fOoo = 5000LL\n"
+    self.assertProgramFails(program)
+
+  def test_invalid_floating_point_fails(self):
+    program = b"float v = .5\n"
+    self.assertProgramFails(program)
+
+  def test_invalid_plus_eq(self):
+    program = b"int x += 5\n"
+    self.assertProgramFails(program)
+
+  def test_invalid_times_eq(self):
+    program = b"int x *= 6\n"
     self.assertProgramFails(program)
 
 
