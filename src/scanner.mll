@@ -67,6 +67,7 @@ rule tokenize = parse
 | ':' { COLON }
 | '.' { PERIOD }
 | ',' { COMMA }
+| '_' { UNDERSCORE }
 | ['\n']+ { NEWLINE }
 | "NULL" { NULL }
 (* Literal definitions *)
@@ -103,7 +104,9 @@ rule tokenize = parse
     else
       IDENTIFIER(possible_id)
   }
+| ['+' '-' '%' '&' '$' '@' '!' '#' '^' '*' '/' '~' '?' '>' '<']+ as lit { OBJ_OPERATOR(lit) }
 | eof { EOF }
+
 
 and multi_comment = parse
   "#/" { tokenize lexbuf }

@@ -69,6 +69,18 @@ class TestLexerAndParser(unittest.TestCase):
     self.assertNotIn(b"shift/reduce conflicts", stdout)
     self.assertNotIn(b"shift/reduce conflicts", stderr)
 
+  def test_objoperator_decl_1(self):
+    program = b"Horse winne = yak+#saddle\n"
+    self.assertProgramPasses(program)
+
+  def test_objoperator_decl_2(self):
+    program = b"Horse winne = yak ^&%$ saddle $% poop\n"
+    self.assertProgramPasses(program)
+
+  def test_objoperator_ambiguity_1(self):
+    program = b"Horse winne = 8 + yak+#saddle + 6\n"
+    self.assertProgramPasses(program)
+
   def test_empty_program_passes(self):
     program = b""
     self.assertProgramPasses(program)
@@ -283,6 +295,21 @@ class TestLexerAndParser(unittest.TestCase):
   def test_invalid_times_eq(self):
     program = b"int x *= 6\n"
     self.assertProgramFails(program)
+
+  def test_simple_objop(self):
+    program = b"Wfoueb $^@#&@ Wefoudvn\n"
+    self.assertProgramFails(program)
+
+  def test_multi_objop(self):
+    program = b"Wfoueb $^@#&@ Wefoudvn %&@@$^ HdfEFow\n"
+    self.assertProgramFails(program)
+
+  def test_objoperator_nofirsteq_1(self):
+    program = b"woof = woofwoof =^&$# harry\n"
+    self.assertProgramFails(program)
+
+  def test_objoperator_nofirsteq_2(self):
+    program = b"woof = woofwoof ?= harry\n"
 
   def test_invalid_char_literal_fails(self):
     program = b"char c = ''\n"

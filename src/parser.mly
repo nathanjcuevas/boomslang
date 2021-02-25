@@ -15,7 +15,7 @@
 /* Comparison operators */
 %token DOUBLE_EQ NOT_EQ GT LT GTE LTE
 /* Misc. punctuation */
-%token LPAREN RPAREN LBRACKET RBRACKET COLON PERIOD COMMA
+%token LPAREN RPAREN LBRACKET RBRACKET COLON PERIOD COMMA UNDERSCORE
 /* Syntactically significant whitespace */
 %token NEWLINE INDENT DEDENT EOF
 /* Parameterized tokens */
@@ -27,6 +27,7 @@
 %token <bool> BOOLEAN_LITERAL
 %token <string> TYPE
 %token <string> IDENTIFIER
+%token <string> OBJ_OPERATOR
 
 /* Set precedence and associativity rules */
 /* https://docs.python.org/3/reference/expressions.html#operator-precedence */
@@ -37,6 +38,7 @@
 %left DOUBLE_EQ NOT_EQ GT LT GTE LTE
 %left PLUS MINUS
 %left TIMES DIVIDE MODULO
+%left OBJ_OPERATOR
 %nonassoc UNARY_MINUS
 
 %start program /* the entry point */
@@ -63,6 +65,7 @@ fdecl:
 | DEF IDENTIFIER LPAREN type_params RPAREN COLON NEWLINE INDENT stmts DEDENT {}
 | DEF IDENTIFIER LPAREN RPAREN RETURNS TYPE COLON NEWLINE INDENT stmts DEDENT {}
 | DEF IDENTIFIER LPAREN RPAREN COLON NEWLINE INDENT stmts DEDENT {}
+| DEF UNDERSCORE OBJ_OPERATOR LPAREN TYPE IDENTIFIER RPAREN RETURNS TYPE COLON NEWLINE INDENT stmts DEDENT {}
 
 stmts:
   stmt {}
@@ -172,6 +175,7 @@ expr:
 | expr TIMES expr {}
 | expr DIVIDE expr {}
 | expr MODULO expr {}
+| expr OBJ_OPERATOR expr {}
 | MINUS expr %prec UNARY_MINUS {}
 | assign {}
 | assign_update {}
