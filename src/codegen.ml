@@ -80,6 +80,21 @@ let translate sp_units =
     SignatureMap.add signature func m in
    List.fold_left helper SignatureMap.empty built_in_funcs in
 
+  (* create a map of all the user defined functions *)
+  let user_func_map =
+    let helper m e = match e with 
+     SFdecl(sf) ->
+      let func_t = L.var_arg_function_type (ltype_of_typ sf.srtype) (Array.of_list 
+       (List.fold_left (fun s e -> match e with typ, _ -> s @ [ltype_of_typ typ]) 
+       [] sf.sformals)) in
+      let func = L.define_function (sf.sfname ^ "_usr") func_t the_module in
+      let signature = { S.fs_name = sf.sfname; S.formal_types = 
+       List.fold_left (fun s (typ, _) -> s @ [typ]) [] sf.sformals } in
+      SignatureMap.add signature func m
+     | _ -> m in
+    List.fold_left helper SignatureMap.empty sp_units in
+
+
   (* expression builder *)
   let rec build_expr builder v_symbol_tables (exp : sexpr) = match exp with
     _, SIntLiteral(i)      -> L.const_int i32_t i
@@ -98,13 +113,20 @@ let translate sp_units =
       | SFuncCall(func_name, expr_list) ->
           let expr_typs = List.fold_left (fun s (t, _) -> s @ [t]) [] expr_list in
           let signature = { S.fs_name = func_name; S.formal_types = expr_typs } in
-          if SignatureMap.mem signature built_in_map then
+          if SignatureMap.mem signature built_in_map then (* is a built in func *)
             L.build_call (SignatureMap.find signature built_in_map)
             (Array.of_list (List.fold_left (fun s e -> s @ [build_expr builder v_symbol_tables e])
             [] expr_list))
             (if typ = A.Primitive(A.Void) then "" else (func_name ^ "_res"))
             builder
-          else L.const_int i32_t 0 (* TODO: this is a placeholder! *)
+          else if SignatureMap.mem signature user_func_map then (* is a user defined func *)
+            L.build_call (SignatureMap.find signature user_func_map)
+            (Array.of_list (List.fold_left (fun s e -> s @ [build_expr builder v_symbol_tables e])
+            [] expr_list))
+            (if typ = A.Primitive(A.Void) then "" else (func_name ^ "_res"))
+            builder
+          else raise (Failure ("function " ^ func_name ^ " not found")); 
+           L.const_int i32_t 0 
       )
   (* == is the only binop that can apply to any two types. *)
   | _, SBinop(sexpr1, A.DoubleEq, sexpr2) ->
@@ -252,9 +274,13 @@ let translate sp_units =
     match L.block_terminator (L.insertion_block builder) with
       Some _ -> ()
     | None -> ignore (instr builder) in
+
   (* statement builder *) 
   let rec build_stmt the_function v_symbol_tables builder (ss : sstmt) = match ss with
     SExpr(se)   -> ignore (build_expr builder v_symbol_tables se); builder
+  | SReturn(sexpr) -> L.build_ret (build_expr builder v_symbol_tables sexpr) builder;
+                      builder
+  | SReturnVoid -> L.build_ret_void builder; builder
   | SIf (predicate, then_stmts, elif_stmts, else_stmts) ->
     let bool_val = build_expr builder v_symbol_tables predicate in
     let merge_bb = L.append_block context "merge" the_function in
@@ -297,8 +323,36 @@ let translate sp_units =
   build_stmt_list the_function v_symbol_tables builder stmt_list = 
     List.fold_left (build_stmt the_function v_symbol_tables) builder stmt_list
   in
+
   (* function decleration builder *) 
-  let build_func builder (sf : sfdecl) = builder in
+  let build_func v_symbol_tables builder (sf : sfdecl) = 
+    let signature = { S.fs_name = sf.sfname; S.formal_types = 
+     List.fold_left (fun s (typ, _) -> s @ [typ]) [] sf.sformals } in
+    let func = SignatureMap.find signature user_func_map in
+    let func_builder = L.builder_at_end context (L.entry_block func) in
+    (* allocs formals in the stack *)
+    let alloca_formal s (typ, name) = 
+     s @ [L.build_alloca (ltype_of_typ typ) name func_builder] in
+    let stack_vars = List.fold_left alloca_formal [] sf.sformals in
+    (* stores pointers to the stack location of the formal args *)
+    let rec store_formals param stack_p = match param, stack_p with
+      hd1::[], hd2::[] -> [L.build_store hd1 hd2 func_builder]
+    | hd1::tl1, hd2::tl2 -> (L.build_store hd1 hd2 func_builder)::(store_formals tl1 tl2)
+    | _ -> raise (Failure "store_formals array mismatch!"); []  in
+    (* add a new elem in this function's v_symbol_tables and add formals *)
+    let this_scopes_symbol_table = StringHash.create 10 in
+    let v_symbol_tables = this_scopes_symbol_table::v_symbol_tables in
+    let _ = 
+      store_formals (Array.to_list (L.params func)) stack_vars;
+      List.iter (fun elem -> StringHash.add this_scopes_symbol_table
+                                  (L.value_name elem) elem) stack_vars in
+    let last_builder = List.fold_left (fun builder stmt -> 
+           build_stmt func v_symbol_tables builder stmt) func_builder sf.sbody in
+   (* if user didn't specify return on void function, then add it ourselves *) 
+    let _ = if (sf.srtype = A.Primitive(A.Void)) &&
+           (not (List.mem SReturnVoid sf.sbody)) then
+           ignore (L.build_ret_void last_builder) in
+   builder in
 
   (* class decleration builder *) 
   let build_class builder (sc : sclassdecl) = builder in
@@ -313,7 +367,7 @@ let translate sp_units =
   (* program builder *) 
   let build_program v_symbol_tables builder (spunit : sp_unit) = match spunit with
     SStmt(ss)       -> build_stmt main_func v_symbol_tables builder ss
-  | SFdecl(sf)      -> build_func builder sf
+  | SFdecl(sf)      -> build_func v_symbol_tables builder sf
   | SClassdecl(sc)  -> build_class builder sc in
      
   let final_builder = List.fold_left (build_program [StringHash.create 10]) main_builder sp_units in
