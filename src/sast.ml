@@ -18,6 +18,7 @@ and sx =
 | SObjectVariableAccess of sobject_variable_access
 | SArrayAccess of sarray_access
 | SArrayLiteral of sexpr list
+| SDefaultArray
 | SBinop of sexpr * binop * sexpr
 | SUnop of unaryop * sexpr
 | SAssign of sassign
@@ -126,6 +127,7 @@ let rec string_of_sexpr existing_suffix new_index sexpr =
 | SObjectVariableAccess(sobject_variable_access) -> string_of_sobject_variable_access suffix 0 sobject_variable_access
 | SArrayAccess(sarray_access) -> string_of_sarray_access suffix 0 sarray_access typ
 | SArrayLiteral(sexprs) -> get_multi_node_generator_typ "array_literal" suffix string_of_sexpr sexprs typ
+| SDefaultArray -> get_multi_node_generator_typ "default_array" suffix string_of_sexpr [] typ
 | SBinop(sexpr1, binop, sexpr2) -> combine_list_typ "binop" suffix ([string_of_sexpr suffix 0 sexpr1] @ [string_of_binoperator suffix 1 binop] @ [string_of_sexpr suffix 2 sexpr2]) typ
 | SUnop(unaryop, sexpr) -> combine_list_typ "unaryop" suffix ([string_of_unaryop suffix 0 unaryop] @ [string_of_sexpr suffix 1 sexpr]) typ
 | SAssign(sassign) -> string_of_sassign suffix 0 sassign
@@ -193,4 +195,3 @@ let string_of_sprogram sprogram = (* Takes a program object and returns a Tuple<
 
 let graphviz_string_of_sprogram sprogram =
   "digraph G { \n" ^ (String.concat "\n" (snd (string_of_sprogram sprogram))) ^ "\n}"
-

@@ -308,6 +308,9 @@ and
 check_array_assign lhs_name lhs_element_type lhs_size this_scopes_v_table checked_expr =
   (* *_type is always like Array(Int, 5). *_element_type is the type of the element
      making up the array, e.g. Int *)
+  let _ = match lhs_element_type with (* if defining an object array, make sure class is defined *)
+    Class(name) -> check_class_exists name 
+  | _           -> () in
   let lhs_type = Array(lhs_element_type, lhs_size) in
   let rhs_type = (fst checked_expr) in
   match rhs_type with
@@ -456,6 +459,11 @@ check_array_literal exprs v_symbol_tables =
   let typ = Array(element_typ, (List.length checked_exprs)) in (typ, (SArrayLiteral null_safe_checked_exprs))
 and
 
+check_default_array typ = match typ with
+  Array(_) -> typ, SDefaultArray
+| _        -> raise (Failure ("Attempted to create a default non-array type"))
+and
+
 check_unop unaryop expr v_symbol_tables =
   let checked_expr = (check_expr v_symbol_tables expr) in
   let typ = (fst checked_expr) in
@@ -551,6 +559,7 @@ check_expr v_symbol_tables = function
 | ObjectVariableAccess(object_variable_access) -> check_object_variable_access v_symbol_tables object_variable_access
 | ArrayAccess(array_name, expr) -> check_array_access array_name expr v_symbol_tables
 | ArrayLiteral(exprs) -> check_array_literal exprs v_symbol_tables
+| DefaultArray(typ) -> check_default_array typ
 | Binop(lhs_expr, binop, rhs_expr) -> check_binop lhs_expr binop rhs_expr v_symbol_tables
 | Unop(unaryop, expr) -> check_unop unaryop expr v_symbol_tables
 | Assign(assign) ->
