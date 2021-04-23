@@ -1,0 +1,10 @@
+def my_func(int x) returns int:
+	if x > 5:
+		println("hey")
+	else:
+		return 5
+	return 1
+
+println(my_func(7))
+
+println(my_func(5))

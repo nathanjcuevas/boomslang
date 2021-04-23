@@ -1,0 +1,6 @@
+class MyObject:
+	required:
+		int x
+
+MyObject foo = MyObject(1)
+println(foo.x)

@@ -1,0 +1,7 @@
+class MyObject:
+	static:
+		int x = 5
+	required:
+		int y
+
+println(MyObject(10).y)

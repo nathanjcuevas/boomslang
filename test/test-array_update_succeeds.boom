@@ -1,0 +1,4 @@
+int[] arr = [1, 2]
+arr[0] += 5
+
+println(arr[0])

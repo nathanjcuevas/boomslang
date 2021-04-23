@@ -1,0 +1,6 @@
+def myfunc(int x) returns string:
+	return "hey"
+
+string foo = myfunc(1+1+2+3+5)
+
+println(foo)

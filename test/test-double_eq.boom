@@ -1,0 +1,4 @@
+int x = 2
+println(3 == x)
+x = 3
+println(3 == x)

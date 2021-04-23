@@ -1,0 +1,11 @@
+class MyClass:
+	required:
+		int x
+
+	def myfunc():
+		self.x = 5
+
+MyClass a = MyClass(15)
+println(a.x)
+a.myfunc()
+println(a.x)

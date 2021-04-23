@@ -1,0 +1,13 @@
+class MyObjectTwo:
+	required:
+		string x
+
+
+	optional:
+		string z = "foo"
+MyObjectTwo ot = MyObjectTwo("two")
+println(ot.z)
+println(ot.x)
+MyObjectTwo ot = MyObjectTwo("two","foo2")
+println(ot.z)
+println(ot.x)
