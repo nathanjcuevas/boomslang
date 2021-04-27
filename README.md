@@ -34,7 +34,7 @@ int[] arr = [1, 2, 3, 4, 5]
 
 Arrays can also be initialized with a default value, similar to the "new" keyword in Java. Once initialized, you can access their contents using a standard syntax. The length of an array is obtained using the built-in len keyword.
 ```
-int[] arr = default[10]
+int[] arr = default int[10]
 arr[5] = 5
 int array_len = len(arr)
 ```
