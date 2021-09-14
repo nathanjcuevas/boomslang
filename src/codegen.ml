@@ -1,3 +1,5 @@
+(* This comment is added for COMS4156 HW0 *)
+
 (* Code generation: translate takes a semantically checked AST and
 produces LLVM IR
 
